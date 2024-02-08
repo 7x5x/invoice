@@ -4,6 +4,7 @@ import {
   CustomerLocation,
   DocumentCurrencyCode,
   ZATCAInvoiceTypes,
+  ZATCAPaymentMethods,
   ZATCASimplifiedInvoiceLineItem,
   ZatcaCustomerInfo,
 } from "./zatca/templates/tax_invoice_template.js";
@@ -16,13 +17,13 @@ const line_item: ZATCASimplifiedInvoiceLineItem = {
   quantity: 5,
   tax_exclusive_price: 10,
   VAT_percent: 0.15,
-  other_taxes: [{ percent_amount: 1 }],
-  // discounts: [
-    // { amount: 2, reason: "A discount" },
-    // { amount: 2, reason: "A second discount" },
-  // ],
-};
 
+  other_taxes: [{ percent_amount: 0.15 }],
+  discounts: [
+    { amount: 2, reason: "A discount" },
+    { amount: 2, reason: "A second discount" },
+  ],
+};
 
 // Sample EGSUnit
 const egsunit: EGSUnitInfo = {
@@ -65,12 +66,18 @@ const invoice = new ZATCASimplifiedTaxInvoice({
   props: {
     egs_info: egsunit,
     documentCurrencyCode: DocumentCurrencyCode.SAR,
-    invoiceTypes:ZATCAInvoiceTypes.INVOICE,
+    invoiceTypes: ZATCAInvoiceTypes.INVOICE,
     customerInfo: customer,
     invoice_counter_number: 1,
     invoice_serial_number: "EGS1-886431145-1",
     issue_date: "2022-03-13",
     issue_time: "14:40:40",
+    // cancelation: {
+    //   canceled_invoice_number: 1,
+    //   payment_method: ZATCAPaymentMethods.BANK_CARD,
+    //   cancelation_type: ZATCAInvoiceTypes.INVOICE,
+    //   reason: 'string',
+    // }, add this to genrate billing Ref and add it in the class 
     previous_invoice_hash:
       "NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==",
     line_items: [line_item],
@@ -79,8 +86,6 @@ const invoice = new ZATCASimplifiedTaxInvoice({
 
 const main = async () => {
   try {
-   
-
     // Init a new EGS
     const egs = new EGS(egsunit);
 
@@ -116,7 +121,6 @@ const main = async () => {
       compliance_request_id
     );
 
-    
     console.log(await egs.reportInvoice(signed_invoice_string, invoice_hash));
   } catch (error: any) {
     console.log(error.message ?? error);
