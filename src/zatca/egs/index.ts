@@ -12,6 +12,7 @@ import fs from "fs";
 import API from "../api/index.js";
 import { ZATCASimplifiedTaxInvoice } from "../templates/ZATCASimplifiedTaxInvoice.js";
 import defaultCSRConfig from "../templates/csr_template.js";
+import { ZatcaCustomerInfo } from "../templates/tax_invoice_template.js";
 
 export interface EGSUnitLocation {
   city: string;
@@ -148,6 +149,7 @@ const generateCSR = async (
 
 export class EGS {
   private egs_info: EGSUnitInfo;
+  // private Customer_info: ZatcaCustomerInfo;
   private api: API;
 
   constructor(egs_info: EGSUnitInfo) {
@@ -207,7 +209,7 @@ export class EGS {
       throw new Error("EGS needs to generate a CSR first.");
     console.log("this.egs_info");
     console.log(this.egs_info);
-    
+
     //error
     const issued_data = await this.api
       .compliance()
@@ -316,16 +318,16 @@ export class EGS {
     invoice: ZATCASimplifiedTaxInvoice,
     production?: boolean
   ): { signed_invoice_string: string; invoice_hash: string; qr: string } {
-    console.log('invoice.getXML');
+    console.log("invoice.getXML");
     console.log(invoice.getXML);
-    console.log('====================this.egs_info.private_key=========================');
+    console.log(
+      "====================this.egs_info.private_key========================="
+    );
     console.log(this.egs_info.private_key);
     const certificate = production
-    ? this.egs_info.production_certificate
-    : this.egs_info.compliance_certificate;
-    console.log(
-      "==================== .certificate. ========================="
-    );
+      ? this.egs_info.production_certificate
+      : this.egs_info.compliance_certificate;
+    console.log("==================== .certificate. =========================");
     console.log(certificate);
     if (!certificate || !this.egs_info.private_key)
       throw new Error(

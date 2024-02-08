@@ -1,6 +1,6 @@
 import { EGSUnitInfo } from "../egs/index.js";
-import  defaultBillingReference from "./invoice_billing_reference_template.js"
- 
+import BillingReferenceTag from "./invoice_billing_reference_template.js";
+
 /**
  * Maybe use a templating engine instead of str replace.
  * This works for now though
@@ -18,8 +18,8 @@ const template = /* XML */ `
     <cbc:UUID>SET_TERMINAL_UUID</cbc:UUID>
     <cbc:IssueDate>SET_ISSUE_DATE</cbc:IssueDate>
     <cbc:IssueTime>SET_ISSUE_TIME</cbc:IssueTime>
-    <cbc:InvoiceTypeCode name="0211010">SET_INVOICE_TYPE</cbc:InvoiceTypeCode>
-    <cbc:DocumentCurrencyCode>SAR</cbc:DocumentCurrencyCode>
+    <cbc:InvoiceTypeCode name="0100000">SET_INVOICE_TYPE</cbc:InvoiceTypeCode>
+    <cbc:DocumentCurrencyCode>SET_DOCUMENT_CURRENCT_CODE</cbc:DocumentCurrencyCode>
     <cbc:TaxCurrencyCode>SAR</cbc:TaxCurrencyCode>
     SET_BILLING_REFERENCE
     <cac:AdditionalDocumentReference>
@@ -69,7 +69,37 @@ const template = /* XML */ `
       </cac:PartyLegalEntity>
     </cac:Party>
   </cac:AccountingSupplierParty>
-  <cac:AccountingCustomerParty></cac:AccountingCustomerParty>
+  <cac:AccountingCustomerParty> <cac:Party>
+      <cac:PartyIdentification>
+        <cbc:ID schemeID="NAT">SET_CUSTOMER_COMMERCIAL_REGISTRATION_NUMBER</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PostalAddress>
+        <cbc:StreetName>SET_CUSTOMER_STREET_NAME</cbc:StreetName>
+        <cbc:BuildingNumber>SET_CUSTOMER_BUILDING_NUMBER</cbc:BuildingNumber>
+        <cbc:PlotIdentification>SET_CUSTOMER_PLOT_IDENTIFICATION</cbc:PlotIdentification>
+        <cbc:CitySubdivisionName>SET_CUSTOMER_CITY_SUBDIVISION</cbc:CitySubdivisionName>
+        <cbc:CityName>SET_CUSTOMER_CITY</cbc:CityName>
+        <cbc:PostalZone>SET_CUSTOMER_POSTAL_NUMBER</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>SA</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>SET_CUSTOMER_VAT_NAME</cbc:RegistrationName>
+      </cac:PartyLegalEntity>
+    </cac:Party></cac:AccountingCustomerParty>
+     <cac:Delivery>
+        <cbc:ActualDeliveryDate>2022-09-07</cbc:ActualDeliveryDate>
+    </cac:Delivery>
+
+    <cac:PaymentMeans>
+        <cbc:PaymentMeansCode>10</cbc:PaymentMeansCode>
+    </cac:PaymentMeans>
 </Invoice>
 `;
 
@@ -103,7 +133,7 @@ export interface ZATCASimplifiedInvoiceLineItem {
   tax_exclusive_price: number;
   other_taxes?: ZATCASimplifiedInvoiceLineItemTax[];
   discounts?: ZATCASimplifiedInvoiceLineItemDiscount[];
-  VAT_percent: number;
+  VAT_percent?: number;
 }
 
 export interface ZATCASimplifiedInvoicCancelation {
@@ -112,9 +142,32 @@ export interface ZATCASimplifiedInvoicCancelation {
   cancelation_type: ZATCAInvoiceTypes;
   reason: string;
 }
+export interface ZatcaCustomerInfo {
+  NAT_number: string;
+  location: CustomerLocation;
+  PartyTaxScheme: string;
+  RegistrationName: string;
+}
+
+export interface CustomerLocation {
+  Street: string;
+  BuildingNumber: string;
+  PlotIdentification: string;
+  CitySubdivisionName: string;
+  CityName: string;
+  PostalZone: string;
+  Country: string;
+}
+export enum DocumentCurrencyCode{
+  SAR = "SAR",
+  USD="USD"
+}
 
 export interface ZATCASimplifiedInvoiceProps {
   egs_info: EGSUnitInfo;
+  documentCurrencyCode: DocumentCurrencyCode;
+  invoiceTypes: ZATCAInvoiceTypes;
+  customerInfo: ZatcaCustomerInfo;
   invoice_counter_number: number;
   invoice_serial_number: string;
   issue_date: string;
@@ -131,13 +184,17 @@ export default function populate(props: ZATCASimplifiedInvoiceProps): string {
     "SET_INVOICE_TYPE",
     props.cancelation
       ? props.cancelation.cancelation_type
-      : ZATCAInvoiceTypes.INVOICE
+      : props.invoiceTypes
   );
+    populated_template = populated_template.replace(
+      "SET_DOCUMENT_CURRENCT_CODE",
+      props.documentCurrencyCode
+    );
   // if canceled (BR-KSA-56) set reference number to canceled invoice
   if (props.cancelation) {
     populated_template = populated_template.replace(
       "SET_BILLING_REFERENCE",
-      defaultBillingReference(props.cancelation.canceled_invoice_number)
+      BillingReferenceTag(props.cancelation.canceled_invoice_number)
     );
   } else {
     populated_template = populated_template.replace(
@@ -208,5 +265,40 @@ export default function populate(props: ZATCASimplifiedInvoiceProps): string {
     "SET_VAT_NAME",
     props.egs_info.VAT_name
   );
+
+  populated_template = populated_template.replace(
+    "SET_CUSTOMER_COMMERCIAL_REGISTRATION_NUMBER",
+    props.customerInfo.NAT_number
+  );
+
+  populated_template = populated_template.replace(
+    "SET_CUSTOMER_STREET_NAME",
+    props.customerInfo.location.Street
+  );
+  populated_template = populated_template.replace(
+    "SET_CUSTOMER_BUILDING_NUMBER",
+    props.customerInfo.location.BuildingNumber
+  );
+  populated_template = populated_template.replace(
+    "SET_CUSTOMER_PLOT_IDENTIFICATION",
+    props.customerInfo.location.PlotIdentification
+  );
+  populated_template = populated_template.replace(
+    "SET_CUSTOMER_CITY_SUBDIVISION",
+    props.customerInfo.location.CitySubdivisionName
+  );
+  populated_template = populated_template.replace(
+    "SET_CUSTOMER_CITY",
+    props.customerInfo.location.CityName
+  );
+  populated_template = populated_template.replace(
+    "SET_CUSTOMER_POSTAL_NUMBER",
+    props.customerInfo.location.PostalZone
+  );
+  populated_template = populated_template.replace(
+    "SET_CUSTOMER_VAT_NAME",
+    props.customerInfo.RegistrationName
+  );
+
   return populated_template;
 }

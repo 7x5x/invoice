@@ -31,19 +31,20 @@ function GenerateXMLFile(invoice: Invoice) {
   xmlFile = xmlFile + GenerateAllowanceChargeTag(invoice.allowanceCharge);
   xmlFile = xmlFile + GenerateTaxTotalXML(invoice.taxTotal);
   xmlFile = xmlFile + GenerateLegalMonetaryTotalXML(invoice.legalMonetaryTotal);
-  // xmlFile = xmlFile + generateInvoiceLineXML(invoice.invoiceLineItem);
+  xmlFile = xmlFile + generateInvoiceLineXML(invoice.invoiceLineItem);
 
   xmlFile = xmlFile + xmlFooter;
+  fs.writeFile("ne-file22.xml", xmlFile, (err) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log("Successfully wrote data to file!");
+    }
+  });
   return xmlFile;
 }
 
 const a = GenerateXMLFile(sampleInvoiceData);
 console.log(a);
 
-fs.writeFile("my-file2.xml", a, (err) => {
-  if (err) {
-    console.error(err);
-  } else {
-    console.log("Successfully wrote data to file!");
-  }
-});
+ 

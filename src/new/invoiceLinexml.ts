@@ -30,6 +30,7 @@ interface InvoiceLine {
 
 export function generateInvoiceLineXML(invoiceLineList: InvoiceLine[]) {
   var te: any;
+  var line:string='';
   const xmlInvoiceLineList: any[] = [];
   invoiceLineList.forEach((invoiceLine) => {
     const xmlinvoiceLine = builder.create("cac:InvoiceLine");
@@ -103,11 +104,10 @@ export function generateInvoiceLineXML(invoiceLineList: InvoiceLine[]) {
       .up()
       .up()
       .up();
-
-    console.log(xmlinvoiceLine.toString({ pretty: true }));
-    xmlInvoiceLineList.push(xmlinvoiceLine.toString({ pretty: true }));
+    line = line + xmlinvoiceLine.toString({ pretty: true });
+    // xmlInvoiceLineList.push(xmlinvoiceLine.toString({ pretty: true }));
   });
-  return xmlInvoiceLineList;
+  return line;
 }
 
 // Example usage
@@ -167,6 +167,6 @@ const invoiceLine: InvoiceLine = {
     },
   },
 };
-// const invoiceLineList: InvoiceLine[] = [invoiceLine2, invoiceLine];
-// const generatedXML = generateInvoiceLineXML(invoiceLineList);
-// console.log(generatedXML[0]);
+const invoiceLineList: InvoiceLine[] = [invoiceLine2, invoiceLine];
+const generatedXML = generateInvoiceLineXML(invoiceLineList);
+console.log(generatedXML);

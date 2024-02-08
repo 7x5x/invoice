@@ -181,7 +181,7 @@ console.log(Buffer.from(signed_xml_string).toString("base64"));
       if (response.status != 200)
         throw new Error("Error issuing a production certificate.");
 
-      let issued_certificate = new Buffer(
+      let issued_certificate =  Buffer.from(
         response.data.binarySecurityToken,
         "base64"
       ).toString();

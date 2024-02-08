@@ -2,10 +2,10 @@ import * as builder from "xmlbuilder";
 import { AccountingPartyInfo, infotype } from "./dataType..js";
 
 export function GenerateAccountingCustomerPartyXML(
-  CustomerPartyData: AccountingPartyInfo
+  accountingPartyInfo: AccountingPartyInfo
 ) {
   var tagType: string;
-  CustomerPartyData.type == infotype.AccountingCustomerParty
+  accountingPartyInfo.type == infotype.AccountingCustomerParty
     ? (tagType = "cac:AccountingCustomerParty")
     : (tagType = "cac:AccountingSupplierParty");
 
@@ -14,46 +14,55 @@ export function GenerateAccountingCustomerPartyXML(
     .ele("cac:Party")
     .ele("cac:PartyIdentification")
     .ele("cbc:ID", {
-      schemeID: CustomerPartyData.Party.PartyIdentification.schemeID.toString(),
+      schemeID:
+        accountingPartyInfo.Party.PartyIdentification.schemeID.toString(),
     })
-    .txt(CustomerPartyData.Party.PartyIdentification.ID)
+    .txt(accountingPartyInfo.Party.PartyIdentification.ID)
     .up()
     .up()
     .ele("cac:PostalAddress")
     .ele("cbc:StreetName")
-    .txt(CustomerPartyData.Party.PostalAddress.StreetName.toString())
+    .txt(accountingPartyInfo.Party.PostalAddress.StreetName.toString())
     .up()
     .ele("cbc:BuildingNumber")
-    .txt(CustomerPartyData.Party.PostalAddress.BuildingNumber.toString())
+    .txt(accountingPartyInfo.Party.PostalAddress.BuildingNumber.toString())
     .up()
     .ele("cbc:PlotIdentification")
-    .txt(CustomerPartyData.Party.PostalAddress.PlotIdentification.toString())
+    .txt(accountingPartyInfo.Party.PostalAddress.PlotIdentification.toString())
     .up()
     .ele("cbc:CitySubdivisionName")
-    .txt(CustomerPartyData.Party.PostalAddress.CitySubdivisionName.toString())
+    .txt(accountingPartyInfo.Party.PostalAddress.CitySubdivisionName.toString())
     .up()
     .ele("cbc:CityName")
-    .txt(CustomerPartyData.Party.PostalAddress.CityName.toString())
+    .txt(accountingPartyInfo.Party.PostalAddress.CityName.toString())
     .up()
     .ele("cbc:PostalZone")
-    .txt(CustomerPartyData.Party.PostalAddress.PostalZone.toString())
+    .txt(accountingPartyInfo.Party.PostalAddress.PostalZone.toString())
     .up()
     .ele("cac:Country")
     .ele("cbc:IdentificationCode")
-    .txt(CustomerPartyData.Party.PostalAddress.Country.toString())
+    .txt(accountingPartyInfo.Party.PostalAddress.Country.toString())
     .up()
     .up()
     .up()
-    .ele("cac:PartyTaxScheme")
+    .ele("cac:PartyTaxScheme");
+  accountingPartyInfo.Party.CompanyID != null
+    ? customerParty
+        .ele("cbc:CompanyID")
+        .txt(accountingPartyInfo.Party.CompanyID)
+        .up()
+    : "";
+
+  customerParty
     .ele("cac:TaxScheme")
     .ele("cbc:ID")
-    .txt(CustomerPartyData.Party.PartyTaxScheme.toString())
+    .txt(accountingPartyInfo.Party.PartyTaxScheme.toString())
     .up()
     .up()
     .up()
     .ele("cac:PartyLegalEntity")
     .ele("cbc:RegistrationName")
-    .txt(CustomerPartyData.Party.RegistrationName.toString())
+    .txt(accountingPartyInfo.Party.RegistrationName.toString())
     .up()
     .up()
     .up();

@@ -1,8 +1,15 @@
 import { ZATCASimplifiedTaxInvoice } from "./zatca/templates/ZATCASimplifiedTaxInvoice.js";
 import { EGS, EGSUnitInfo } from "./zatca/egs/index.js";
-import { ZATCASimplifiedInvoiceLineItem } from "./zatca/templates/simplified_tax_invoice_template.js";
+import {
+  CustomerLocation,
+  DocumentCurrencyCode,
+  ZATCAInvoiceTypes,
+  ZATCASimplifiedInvoiceLineItem,
+  ZatcaCustomerInfo,
+} from "./zatca/templates/tax_invoice_template.js";
 
-// Sample line item
+import fs from "fs";
+
 const line_item: ZATCASimplifiedInvoiceLineItem = {
   id: "1",
   name: "TEST NAME",
@@ -10,11 +17,12 @@ const line_item: ZATCASimplifiedInvoiceLineItem = {
   tax_exclusive_price: 10,
   VAT_percent: 0.15,
   other_taxes: [{ percent_amount: 1 }],
-  discounts: [
-    { amount: 2, reason: "A discount" },
-    { amount: 2, reason: "A second discount" },
-  ],
+  // discounts: [
+    // { amount: 2, reason: "A discount" },
+    // { amount: 2, reason: "A second discount" },
+  // ],
 };
+
 
 // Sample EGSUnit
 const egsunit: EGSUnitInfo = {
@@ -36,26 +44,42 @@ const egsunit: EGSUnitInfo = {
   branch_industry: "Food",
 };
 
+const customerAddress: CustomerLocation = {
+  Street: "الرياض",
+  BuildingNumber: "1111",
+  PlotIdentification: "2223",
+  CitySubdivisionName: "الرياض",
+  CityName: "الدمام | Dammam",
+  PostalZone: "12222",
+  Country: "Acme Widget’s LTD 2",
+};
+const customer: ZatcaCustomerInfo = {
+  NAT_number: "311111111111113",
+  location: customerAddress,
+  PartyTaxScheme: "string",
+  RegistrationName: "Acme Widget’s LTD 2",
+};
+
 // Sample Invoice
 const invoice = new ZATCASimplifiedTaxInvoice({
   props: {
     egs_info: egsunit,
+    documentCurrencyCode: DocumentCurrencyCode.SAR,
+    invoiceTypes:ZATCAInvoiceTypes.INVOICE,
+    customerInfo: customer,
     invoice_counter_number: 1,
     invoice_serial_number: "EGS1-886431145-1",
     issue_date: "2022-03-13",
     issue_time: "14:40:40",
     previous_invoice_hash:
       "NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==",
-    line_items: [line_item, line_item, line_item],
+    line_items: [line_item],
   },
 });
 
-console.log("asas");
 const main = async () => {
   try {
-    // TEMP_FOLDER: Use .env or set directly here (Default: /tmp/)
-    // Enable for windows
-    // process.env.TEMP_FOLDER = `${require("os").tmpdir()}\\`;
+   
 
     // Init a new EGS
     const egs = new EGS(egsunit);
@@ -66,14 +90,23 @@ const main = async () => {
     // Issue a new compliance cert for the EGS
     const compliance_request_id = await egs.issueComplianceCertificate(
       "123345"
-      );
-      
-      //error
+    );
+
+    //error
     // Sign invoice
     const { signed_invoice_string, invoice_hash, qr } =
       egs.signInvoice(invoice);
 
     // Check invoice compliance
+    console.log(signed_invoice_string);
+    fs.writeFile("Invoice.xml", signed_invoice_string, (err) => {
+      if (err) {
+        console.error(err);
+      } else {
+        console.log("Successfully wrote data to file!");
+      }
+    });
+
     console.log(
       await egs.checkInvoiceCompliance(signed_invoice_string, invoice_hash)
     );
@@ -83,8 +116,7 @@ const main = async () => {
       compliance_request_id
     );
 
-    // Report invoice production
-    // Note: This request currently fails because ZATCA sandbox returns a constant fake production certificate
+    
     console.log(await egs.reportInvoice(signed_invoice_string, invoice_hash));
   } catch (error: any) {
     console.log(error.message ?? error);
