@@ -70,9 +70,6 @@ class API {
 
   private getAuthHeaders = (certificate?: string, secret?: string): any => {
     if (certificate && secret) {
-      console.log("certificate")
-      console.log(certificate)
-      console.log(secret)
       const certificate_stripped = cleanUpCertificateString(certificate);
       const basic = Buffer.from(
         `${Buffer.from(certificate_stripped).toString("base64")}:${secret}`
@@ -85,7 +82,6 @@ class API {
   };
 
   compliance(certificate?: string, secret?: string): ComplianceAPIInterface {
-    console.log("compliance",certificate,secret);
     const auth_headers = this.getAuthHeaders(certificate, secret);
 
     const issueCertificate = async (
@@ -134,10 +130,7 @@ class API {
         "Accept-Language": "en",
       };
 
-console.log('==========api- post=======Buffer.from(signed_xml_string).toString');
-console.log(Buffer.from(signed_xml_string).toString());
-console.log('==========api- post=======Buffer.from(signed_xml_string).toString("base64")==========');
-console.log(Buffer.from(signed_xml_string).toString("base64"));
+
       const response = await axios.post(
         `${settings.SANDBOX_BASEURL}/compliance/invoices`,
         {
@@ -188,6 +181,7 @@ console.log(Buffer.from(signed_xml_string).toString("base64"));
       issued_certificate = `-----BEGIN CERTIFICATE-----\n${issued_certificate}\n-----END CERTIFICATE-----`;
       const api_secret = response.data.secret;
 
+      console.log(response.data)
       return {
         issued_certificate,
         api_secret,
@@ -203,11 +197,11 @@ console.log(Buffer.from(signed_xml_string).toString("base64"));
       const headers = {
         "Accept-Version": settings.API_VERSION,
         "Accept-Language": "en",
-        "Clearance-Status": "0",
+        "Clearance-Status": "1",
       };
 
       const response = await axios.post(
-        `${settings.SANDBOX_BASEURL}/invoices/reporting/single`,
+        `${settings.SANDBOX_BASEURL}/invoices/clearance/single`,
         {
           invoiceHash: invoice_hash,
           uuid: egs_uuid,
@@ -216,6 +210,8 @@ console.log(Buffer.from(signed_xml_string).toString("base64"));
         { headers: { ...auth_headers, ...headers } }
       );
 
+      console.log(" reportInvoice response.data");
+      console.log(response);
       if (response.status != 200)
         throw new Error("Error in reporting invoice.");
       return response.data;

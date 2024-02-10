@@ -46,7 +46,7 @@ export const generateQR = ({
   const issue_date = invoice_xml.get("Invoice/cbc:IssueDate")?.[0];
   const issue_time = invoice_xml.get("Invoice/cbc:IssueTime")?.[0];
 
-  // Detect if simplified invoice or not (not used currently assuming all simplified tax invoice)
+  // Detect if  invoice or not (not used currently assuming all simplified tax invoice)
   const invoice_type = invoice_xml
     .get("Invoice/cbc:InvoiceTypeCode")?.[0]
     ["@_name"].toString();
@@ -70,50 +70,45 @@ export const generateQR = ({
   return qr_tlv.toString("base64");
 };
 
-/**
- * Generates a QR for phase one given an invoice.
- * This is a temporary function for backwards compatibility while phase two is not fully deployed.
- * @param invoice_xml XMLDocument.
- * @returns String base64 encoded QR data.
- */
-export const generatePhaseOneQR = ({
-  invoice_xml,
-}: {
-  invoice_xml: XMLDocument;
-}): string => {
-  // Extract required tags
-  const seller_name = invoice_xml.get(
-    "Invoice/cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName"
-  )?.[0];
-  const VAT_number = invoice_xml
-    .get(
-      "Invoice/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID"
-    )?.[0]
-    .toString();
-  const invoice_total = invoice_xml
-    .get("Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")?.[0]
-    ["#text"].toString();
-  const VAT_total = invoice_xml
-    .get("Invoice/cac:TaxTotal")?.[0]
-    ["cbc:TaxAmount"]["#text"].toString();
 
-  const issue_date = invoice_xml.get("Invoice/cbc:IssueDate")?.[0];
-  const issue_time = invoice_xml.get("Invoice/cbc:IssueTime")?.[0];
+// export const generatePhaseOneQR = ({
+//   invoice_xml,
+// }: {
+//   invoice_xml: XMLDocument;
+// }): string => {
+//   // Extract required tags
+//   const seller_name = invoice_xml.get(
+//     "Invoice/cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName"
+//   )?.[0];
+//   const VAT_number = invoice_xml
+//     .get(
+//       "Invoice/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID"
+//     )?.[0]
+//     .toString();
+//   const invoice_total = invoice_xml
+//     .get("Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")?.[0]
+//     ["#text"].toString();
+//   const VAT_total = invoice_xml
+//     .get("Invoice/cac:TaxTotal")?.[0]
+//     ["cbc:TaxAmount"]["#text"].toString();
 
-  const datetime = `${issue_date} ${issue_time}`;
-  const formatted_datetime =
-    moment(datetime).format("YYYY-MM-DDTHH:mm:ss") + "Z";
+//   const issue_date = invoice_xml.get("Invoice/cbc:IssueDate")?.[0];
+//   const issue_time = invoice_xml.get("Invoice/cbc:IssueTime")?.[0];
 
-  const qr_tlv = TLV([
-    seller_name,
-    VAT_number,
-    formatted_datetime,
-    invoice_total,
-    VAT_total,
-  ]);
+//   const datetime = `${issue_date} ${issue_time}`;
+//   const formatted_datetime =
+//     moment(datetime).format("YYYY-MM-DDTHH:mm:ss") + "Z";
 
-  return qr_tlv.toString("base64");
-};
+//   const qr_tlv = TLV([
+//     seller_name,
+//     VAT_number,
+//     formatted_datetime,
+//     invoice_total,
+//     VAT_total,
+//   ]);
+
+//   return qr_tlv.toString("base64");
+// };
 
 const TLV = (tags: any[]): Buffer => {
   const tlv_tags: Buffer[] = [];

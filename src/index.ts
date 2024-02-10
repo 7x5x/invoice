@@ -1,4 +1,4 @@
-import { ZATCASimplifiedTaxInvoice } from "./zatca/templates/ZATCASimplifiedTaxInvoice.js";
+import { ZATCASimplifiedTaxInvoice } from "./zatca/templates/ZATCATaxInvoice.js";
 import { EGS, EGSUnitInfo } from "./zatca/egs/index.js";
 import {
   CustomerLocation,
@@ -18,11 +18,8 @@ const line_item: ZATCASimplifiedInvoiceLineItem = {
   tax_exclusive_price: 10,
   VAT_percent: 0.15,
 
-  other_taxes: [{ percent_amount: 0.15 }],
-  discounts: [
-    { amount: 2, reason: "A discount" },
-    { amount: 2, reason: "A second discount" },
-  ],
+  // other_taxes: [{ percent_amount: 0.15 }],
+  // discounts: [{ amount: 2, reason: "A discount" }],
 };
 
 // Sample EGSUnit
@@ -44,7 +41,6 @@ const egsunit: EGSUnitInfo = {
   branch_name: "Nassaco",
   branch_industry: "Food",
 };
-
 const customerAddress: CustomerLocation = {
   Street: "الرياض",
   BuildingNumber: "1111",
@@ -61,23 +57,23 @@ const customer: ZatcaCustomerInfo = {
   RegistrationName: "Acme Widget’s LTD 2",
 };
 
-// Sample Invoice
+//  Invoice
 const invoice = new ZATCASimplifiedTaxInvoice({
   props: {
     egs_info: egsunit,
-    documentCurrencyCode: DocumentCurrencyCode.SAR,
-    invoiceTypes: ZATCAInvoiceTypes.INVOICE,
     customerInfo: customer,
+    documentCurrencyCode: DocumentCurrencyCode.USD,
+    invoiceTypes: ZATCAInvoiceTypes.INVOICE,
+    payment_method: ZATCAPaymentMethods.BANK_ACCOUNT,
     invoice_counter_number: 1,
     invoice_serial_number: "EGS1-886431145-1",
     issue_date: "2022-03-13",
+    delivery_date: "2022-09-13",
     issue_time: "14:40:40",
-    // cancelation: {
-    //   canceled_invoice_number: 1,
-    //   payment_method: ZATCAPaymentMethods.BANK_CARD,
-    //   cancelation_type: ZATCAInvoiceTypes.INVOICE,
-    //   reason: 'string',
-    // }, add this to genrate billing Ref and add it in the class 
+    // billingReference: {
+    //   BillingReference_invoice_number: 1,
+    //   reason: "string",
+    // },
     previous_invoice_hash:
       "NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==",
     line_items: [line_item],
@@ -86,13 +82,9 @@ const invoice = new ZATCASimplifiedTaxInvoice({
 
 const main = async () => {
   try {
-    // Init a new EGS
     const egs = new EGS(egsunit);
 
-    await egs.generateNewKeysAndCSR(false, "solution_name");
-    // New Keys & CSR for the EGS
-
-    // Issue a new compliance cert for the EGS
+    await egs.generateNewKeysAndCSR(false, "Nassaco_Device");
     const compliance_request_id = await egs.issueComplianceCertificate(
       "123345"
     );
@@ -103,7 +95,6 @@ const main = async () => {
       egs.signInvoice(invoice);
 
     // Check invoice compliance
-    console.log(signed_invoice_string);
     fs.writeFile("Invoice.xml", signed_invoice_string, (err) => {
       if (err) {
         console.error(err);
@@ -120,7 +111,6 @@ const main = async () => {
     const production_request_id = await egs.issueProductionCertificate(
       compliance_request_id
     );
-
     console.log(await egs.reportInvoice(signed_invoice_string, invoice_hash));
   } catch (error: any) {
     console.log(error.message ?? error);

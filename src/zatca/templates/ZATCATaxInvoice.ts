@@ -39,10 +39,7 @@ export class ZATCASimplifiedTaxInvoice {
   private invoice_xml: XMLDocument;
 
   /**
-   * Parses a ZATCA Simplified Tax Invoice XML string. Or creates a new one based on given props.
-   * @param invoice_xml_str Invoice XML string to parse.
-   * @param props ZATCASimplifiedInvoiceProps props to create a new unsigned invoice.
-   */
+   * Parses a ZATCA  Tax Invoice XML string. Or creates a new one based on given props.*/
   constructor({
     invoice_xml_str,
     props,
@@ -52,8 +49,6 @@ export class ZATCASimplifiedTaxInvoice {
   }) {
     if (invoice_xml_str) {
       this.invoice_xml = new XMLDocument(invoice_xml_str);
-      console.log("===============this.invoice_xml");
-      console.log(this.invoice_xml);
       if (!this.invoice_xml)
         throw new Error("Error parsing invoice XML string.");
     } else {
@@ -215,36 +210,6 @@ export class ZATCASimplifiedTaxInvoice {
     taxes_total: number,
     CurrencyCode: DocumentCurrencyCode
   ) => {
-    console.log({
-      // BR-DEC-09
-      "cbc:LineExtensionAmount": {
-        "@_currencyID": CurrencyCode,
-        "#text": tax_exclusive_subtotal.toFixedNoRounding(2),
-      },
-      // BR-DEC-12
-      "cbc:TaxExclusiveAmount": {
-        "@_currencyID": CurrencyCode,
-        "#text": tax_exclusive_subtotal.toFixedNoRounding(2),
-      },
-      // BR-DEC-14, BT-112
-      "cbc:TaxInclusiveAmount": {
-        "@_currencyID": CurrencyCode,
-        "#text": parseFloat((tax_exclusive_subtotal + taxes_total).toFixed(2)),
-      },
-      "cbc:AllowanceTotalAmount": {
-        "@_currencyID": CurrencyCode,
-        "#text": 0,
-      },
-      "cbc:PrepaidAmount": {
-        "@_currencyID": CurrencyCode,
-        "#text": 0,
-      },
-      // BR-DEC-18, BT-112
-      "cbc:PayableAmount": {
-        "@_currencyID": CurrencyCode,
-        "#text": parseFloat((tax_exclusive_subtotal + taxes_total).toFixed(2)),
-      },
-    });
     return {
       // BR-DEC-09
       "cbc:LineExtensionAmount": {
@@ -282,7 +247,6 @@ export class ZATCASimplifiedTaxInvoice {
     CurrencyCode: DocumentCurrencyCode
   ) => {
     const cacTaxSubtotal: any[] = [];
-    // BR-DEC-13, MESSAGE : [BR-DEC-13]-The allowed maximum number of decimals for the Invoice total VAT amount (BT-110) is 2.
     const addTaxSubtotal = (
       taxable_amount: number,
       tax_amount: number,
@@ -340,13 +304,10 @@ export class ZATCASimplifiedTaxInvoice {
       });
     });
 
-    // BT-110
     taxes_total = parseFloat(taxes_total.toFixed(2));
 
-    // BR-DEC-13, MESSAGE : [BR-DEC-13]-The allowed maximum number of decimals for the Invoice total VAT amount (BT-110) is 2.
     return [
       {
-        // Total tax amount for the full invoice
         "cbc:TaxAmount": {
           "@_currencyID": CurrencyCode,
           "#text": taxes_total.toFixedNoRounding(2),
@@ -354,9 +315,9 @@ export class ZATCASimplifiedTaxInvoice {
         "cac:TaxSubtotal": cacTaxSubtotal,
       },
       {
-        // KSA Rule for VAT tax
+        // TaxAmount must be SAR even if the invoice is USD
         "cbc:TaxAmount": {
-          "@_currencyID": CurrencyCode,
+          "@_currencyID": "SAR",
           "#text": taxes_total.toFixedNoRounding(2),
         },
       },
@@ -391,12 +352,21 @@ export class ZATCASimplifiedTaxInvoice {
     total_taxes = parseFloat(total_taxes.toFixed(2));
     total_subtotal = parseFloat(total_subtotal.toFixed(2));
 
-    if (props.cancelation) {
+    this.invoice_xml.set("Invoice/cac:Delivery", false, {
+      "cbc:ActualDeliveryDate": props.delivery_date,
+    });
+
+    if (props.invoiceTypes === ZATCAInvoiceTypes.INVOICE) {
       // Invoice canceled. Tunred into credit/debit note. Must have PaymentMeans
       // BR-KSA-17
       this.invoice_xml.set("Invoice/cac:PaymentMeans", false, {
-        "cbc:PaymentMeansCode": props.cancelation.payment_method,
-        "cbc:InstructionNote": props.cancelation.reason ?? "No note Specified",
+        "cbc:PaymentMeansCode": props.payment_method,
+      });
+    } else {
+      this.invoice_xml.set("Invoice/cac:PaymentMeans", false, {
+        "cbc:PaymentMeansCode": props.payment_method,
+        "cbc:InstructionNote":
+          props.billingReference.reason ?? "No note Specified",
       });
     }
 
@@ -426,18 +396,9 @@ export class ZATCASimplifiedTaxInvoice {
   }
 
   /**
-   * Signs the invoice.
-   * @param certificate_string String signed EC certificate.
-   * @param private_key_string String ec-secp256k1 private key;
-   * @returns String signed invoice xml, includes QR generation.
-   */
+   * Signs the invoice.*/
+
   sign(certificate_string: string, private_key_string: string) {
-    console.log("this.invoice_xml");
-    console.log(this.invoice_xml["xml_object"]["Invoice"]);
-    console.log("============XML=================");
-    console.log(this.invoice_xml["xml_object"]["xml"]);
-    console.log("============certificate_string=================");
-    console.log(certificate_string);
     return generateSignedXMLString({
       invoice_xml: this.invoice_xml,
       certificate_string: certificate_string,

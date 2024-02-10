@@ -40,15 +40,9 @@ export const getPureInvoiceString = (invoice_xml: XMLDocument): string => {
 };
 
 /**
- * Hashes Invoice according to ZATCA.
- * https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_Electronic_Invoice_Security_Features_Implementation_Standards.pdf
- * 2.3.3: Follows same method as PIH (Previous invoice hash BS: KSA-13).
- * @param invoice_xml XMLDocument.
- * @returns String invoice hash encoded in base64.
- */
+ * Hashes Invoice according to ZATCA.*/
 export const getInvoiceHash = (invoice_xml: XMLDocument): string => {
   let pure_invoice_string: string = getPureInvoiceString(invoice_xml);
-  // A dumb workaround for whatever reason ZATCA XML devs decided to include those trailing spaces and a newlines. (without it the hash is incorrect)
   pure_invoice_string = pure_invoice_string.replace(
     "<cbc:ProfileID>",
     "\n    <cbc:ProfileID>"
@@ -62,12 +56,7 @@ export const getInvoiceHash = (invoice_xml: XMLDocument): string => {
 };
 
 /**
- * Hashes Certificate according to ZATCA.
- * https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_Electronic_Invoice_Security_Features_Implementation_Standards.pdf
- * 1.6.2.1.1.2: used in reference to digital signing certificate.
- * @param certificate_string String base64 encoded certificate body.
- * @returns String certificate hash encoded in base64.
- */
+ * Hashes Certificate according to ZATCA.*/
 export const getCertificateHash = (certificate_string: string): string => {
   const certificate_hash = Buffer.from(
     createHash("sha256").update(certificate_string).digest("hex")
@@ -76,13 +65,7 @@ export const getCertificateHash = (certificate_string: string): string => {
 };
 
 /**
- * Creates invoice digital signature according to ZATCA.
- * https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_Electronic_Invoice_Security_Features_Implementation_Standards.pdf
- * 1.4: Digital signature, part of the cryptographic stamp (invoice hash signed using private key) (BS: KSA-15).
- * @param invoice_hash String base64 encoded invoice hash.
- * @param private_key_string String base64 encoded ec-secp256k1 private key body.
- * @returns String base64 encoded digital signature.
- */
+ * Creates invoice digital signature according to ZATCA.*/
 export const createInvoiceDigitalSignature = (
   invoice_hash: string,
   private_key_string: string
@@ -100,15 +83,11 @@ export const createInvoiceDigitalSignature = (
   return signature;
 };
 
-/**
- * Gets certificate hash, x509IssuerName, and X509SerialNumber and formats them according to ZATCA.
- * @param certificate_string String base64 encoded certificate body.
- * @returns {hash: string, issuer: string, serial_number: string, public_key: Buffer, signature: Buffer}.
- */
+/*Gets certificate hash, x509IssuerName, and X509SerialNumber and formats them according to ZATCA.*/
 export const getCertificateInfo = (
   certificate_string: string
 ): {
-  hash: string;
+  hash: string; // String base64 encoded certificate body
   issuer: string;
   serial_number: string;
   public_key: Buffer;
@@ -120,13 +99,6 @@ export const getCertificateInfo = (
 
   const hash = getCertificateHash(cleanedup_certificate_string);
   const x509 = new X509Certificate(wrapped_certificate_string);
-
-  // Signature, and public key extraction from x509 PEM certificate (asn1 rfc5280)
-  // Crypto module does not have those functionalities so i'm the crypto boy now :(
-  // https://github.com/nodejs/node/blob/main/src/crypto/crypto_x509.cc
-  // https://linuxctl.com/2017/02/x509-certificate-manual-signature-verification/
-  // https://github.com/junkurihara/js-x509-utils/blob/develop/src/x509.js
-  // decode binary x509-formatted object
   const cert = Certificate.fromPEM(Buffer.from(wrapped_certificate_string));
 
   return {
@@ -139,10 +111,7 @@ export const getCertificateInfo = (
 };
 
 /**
- * Removes header and footer from certificate string.
- * @param certificate_string.
- * @returns String base64 encoded certificate body.
- */
+ * Removes header and footer from certificate string.*/
 export const cleanUpCertificateString = (
   certificate_string: string
 ): string => {
@@ -269,11 +238,7 @@ export const generateSignedXMLString = ({
   };
 };
 
-/**
- * This hurts to do :'(. I hope that it's only temporary and ZATCA decides to just minify the XML before doing any hashing on it.
- * there is no logical reason why the validation expects an incorrectly indented XML.
- * Anyway, this is a function that fucks up the indentation in order to match validator hashing.
- */
+
 const signedPropertiesIndentationFix = (
   signed_invoice_string: string
 ): string => {

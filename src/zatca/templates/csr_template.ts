@@ -67,7 +67,7 @@ interface CSRConfigProps {
   taxpayer_name: string;
   taxpayer_provided_id: string;
 }
-export default function populate(props: CSRConfigProps): string {
+export default function GenerateCSRFile(props: CSRConfigProps): string {
   let populated_template = template;
   populated_template = populated_template.replace(
     "SET_PRIVATE_KEY_PASS",
