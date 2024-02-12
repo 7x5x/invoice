@@ -19,12 +19,12 @@ const line_item: ZATCAInvoiceLineItem = {
   VAT_percent: 0.15,
   // other_taxes: [{ percent_amount: 0.15 }],
   Penalty: [],
-  // invoice_level_discounts: [
-  //   {
-  //     reason: "aaaa",
-  //     amount: 10.0,
-  //   },
-  // ],
+  invoice_level_discounts: [
+    {
+      reason: "aaaa",
+      amount: 10.0,
+    },
+  ],
 };
 const line_item2: ZATCAInvoiceLineItem = {
   id: "2",

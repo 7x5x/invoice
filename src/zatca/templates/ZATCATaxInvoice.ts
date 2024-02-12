@@ -339,6 +339,26 @@ export class ZATCATaxInvoice {
       });
     });
 
+    line_items.map((line_item) => {
+      const total_line_item_discount =
+        line_item.invoice_level_discounts?.reduce(
+          (p, c) => p + c.amount,
+          0
+        );
+      const taxable_amount =
+        line_item.tax_exclusive_price * line_item.quantity -
+        (total_line_item_discount ?? 0);
+
+      let tax_amount = line_item.VAT_percent * taxable_amount;
+      addTaxSubtotal(taxable_amount, tax_amount, line_item.VAT_percent);
+      taxes_total += parseFloat(tax_amount.toFixedNoRounding(2));
+      line_item.other_taxes?.map((tax) => {
+        tax_amount = tax.percent_amount * taxable_amount;
+        addTaxSubtotal(taxable_amount, tax_amount, tax.percent_amount);
+        taxes_total += parseFloat(tax_amount.toFixedNoRounding(2));
+      });
+    });
+
     taxes_total = parseFloat(taxes_total.toFixed(2));
 
     return [
@@ -412,6 +432,9 @@ export class ZATCATaxInvoice {
         props.documentCurrencyCode
       );
       line_item.invoice_line_level_discounts?.map((total_discount) => {
+        line_item_total_discounts += total_discount.amount;
+      });
+      line_item.invoice_level_discounts?.map((total_discount) => {
         line_item_total_discounts += total_discount.amount;
       });
 
