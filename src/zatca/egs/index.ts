@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 
 import API from "../api/index.js";
-import { ZATCASimplifiedTaxInvoice } from "../templates/ZATCATaxInvoice.js";
+import { ZATCATaxInvoice } from "../templates/ZATCATaxInvoice.js";
 import defaultCSRConfig from "../templates/csr_template.js";
 import { ZatcaCustomerInfo } from "../templates/tax_invoice_template.js";
 
@@ -263,7 +263,7 @@ export class EGS {
 
   /* Signs a given invoice using the EGS certificate and keypairs. */
   signInvoice(
-    invoice: ZATCASimplifiedTaxInvoice,
+    invoice: ZATCATaxInvoice,
     production?: boolean
   ): { signed_invoice_string: string; invoice_hash: string; qr: string } {
     const certificate = production

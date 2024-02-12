@@ -1,30 +1,48 @@
-import { ZATCASimplifiedTaxInvoice } from "./zatca/templates/ZATCATaxInvoice.js";
+import { ZATCATaxInvoice } from "./zatca/templates/ZATCATaxInvoice.js";
 import { EGS, EGSUnitInfo } from "./zatca/egs/index.js";
 import {
   CustomerLocation,
   DocumentCurrencyCode,
   ZATCAInvoiceTypes,
   ZATCAPaymentMethods,
-  ZATCASimplifiedInvoiceLineItem,
+  ZATCAInvoiceLineItem,
   ZatcaCustomerInfo,
 } from "./zatca/templates/tax_invoice_template.js";
 
 import fs from "fs";
 
-const line_item: ZATCASimplifiedInvoiceLineItem = {
+const line_item: ZATCAInvoiceLineItem = {
   id: "1",
   name: "TEST NAME",
-  quantity: 5,
-  tax_exclusive_price: 10,
+  quantity: 1,
+  tax_exclusive_price: 500,
+  VAT_percent: 0.15,
+  // other_taxes: [{ percent_amount: 0.15 }],
+  Penalty: [],
+  // invoice_level_discounts: [
+  //   {
+  //     reason: "aaaa",
+  //     amount: 10.0,
+  //   },
+  // ],
+};
+const line_item2: ZATCAInvoiceLineItem = {
+  id: "2",
+  name: "TEST NAME",
+  quantity: 2,
+  tax_exclusive_price: 100,
   VAT_percent: 0.15,
 
   // other_taxes: [{ percent_amount: 0.15 }],
-  // discounts: [{ amount: 2, reason: "A discount" }],
+  invoice_line_level_discounts: [
+    { amount: 20.0, reason: "A discount" },
+    // { amount: 10.0, reason: "A discount" },
+  ],
 };
 
 // Sample EGSUnit
 const egsunit: EGSUnitInfo = {
-  uuid: "6f4d20e0-6bfe-4a80-9389-7dabe6620f12",
+  uuid: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
   custom_id: "EGS1-886431145",
   model: "IOS",
   CRN_number: "454634645645654",
@@ -58,21 +76,22 @@ const customer: ZatcaCustomerInfo = {
 };
 
 //  Invoice
-const invoice = new ZATCASimplifiedTaxInvoice({
+const invoice = new ZATCATaxInvoice({
   props: {
     egs_info: egsunit,
     customerInfo: customer,
-    documentCurrencyCode: DocumentCurrencyCode.USD,
-    invoiceTypes: ZATCAInvoiceTypes.INVOICE,
-    payment_method: ZATCAPaymentMethods.BANK_ACCOUNT,
     invoice_counter_number: 1,
     invoice_serial_number: "EGS1-886431145-1",
+    PrepaidAmount: 0,
+    documentCurrencyCode: DocumentCurrencyCode.USD,
+    payment_method: ZATCAPaymentMethods.BANK_ACCOUNT,
     issue_date: "2022-03-13",
     delivery_date: "2022-09-13",
     issue_time: "14:40:40",
-    // billingReference: {
-    //   BillingReference_invoice_number: 1,
-    //   reason: "string",
+    // cancelation: {
+    //   canceled_invoice_number: 1,
+    //   reason: "CANCELLATION_OR_TERMINATION",
+    //   cancelation_type: ZATCAInvoiceTypes.DEBIT_NOTE,
     // },
     previous_invoice_hash:
       "NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==",

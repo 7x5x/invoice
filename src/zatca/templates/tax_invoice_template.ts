@@ -112,26 +112,29 @@ export enum ZATCAInvoiceTypes {
   CREDIT_NOTE = "381",
 }
 
-export interface ZATCASimplifiedInvoiceLineItemDiscount {
+export interface ZATCAInvoiceLineItemDiscount {
   amount: number;
   reason: string;
 }
 
-export interface ZATCASimplifiedInvoiceLineItemTax {
+export interface ZATCAInvoiceLineItemTax {
   percent_amount: number;
 }
 
-export interface ZATCASimplifiedInvoiceLineItem {
+export interface ZATCAInvoiceLineItem {
   id: string;
   name: string;
   quantity: number;
+  Penalty?: ZATCAInvoiceLineItemDiscount[];
   tax_exclusive_price: number;
-  other_taxes?: ZATCASimplifiedInvoiceLineItemTax[];
-  discounts?: ZATCASimplifiedInvoiceLineItemDiscount[];
+  other_taxes?: ZATCAInvoiceLineItemTax[];
+  invoice_line_level_discounts?: ZATCAInvoiceLineItemDiscount[];
+  invoice_level_discounts?: ZATCAInvoiceLineItemDiscount[];
   VAT_percent?: number;
 }
-export interface ZATCASimplifiedInvoicBillingReference {
-  BillingReference_invoice_number: number;
+export interface ZATCAInvoicCancelation {
+  canceled_invoice_number: number;
+  cancelation_type: ZATCAInvoiceTypes;
   reason: string;
 }
 export interface ZatcaCustomerInfo {
@@ -159,17 +162,18 @@ export enum DocumentCurrencyCode {
 export interface ZATCASimplifiedInvoiceProps {
   egs_info: EGSUnitInfo;
   documentCurrencyCode: DocumentCurrencyCode;
-  invoiceTypes: ZATCAInvoiceTypes;
+
   payment_method: ZATCAPaymentMethods;
   customerInfo: ZatcaCustomerInfo;
   invoice_counter_number: number;
+  PrepaidAmount?: number;
   invoice_serial_number: string;
   issue_date: string;
   delivery_date: string;
   issue_time: string;
   previous_invoice_hash: string;
-  line_items?: ZATCASimplifiedInvoiceLineItem[];
-  billingReference?: ZATCASimplifiedInvoicBillingReference;
+  line_items?: ZATCAInvoiceLineItem[];
+  cancelation?: ZATCAInvoicCancelation;
 }
 
 export default function populate(props: ZATCASimplifiedInvoiceProps): string {
@@ -177,19 +181,19 @@ export default function populate(props: ZATCASimplifiedInvoiceProps): string {
 
   populated_template = populated_template.replace(
     "SET_INVOICE_TYPE",
-    props.invoiceTypes
+    props.cancelation
+      ? props.cancelation.cancelation_type
+      : ZATCAInvoiceTypes.INVOICE
   );
   populated_template = populated_template.replace(
     "SET_DOCUMENT_CURRENCT_CODE",
     props.documentCurrencyCode
   );
   // if canceled (BR-KSA-56) set reference number to canceled invoice
-  if (props.billingReference) {
+  if (props.cancelation) {
     populated_template = populated_template.replace(
       "SET_BILLING_REFERENCE",
-      BillingReferenceTag(
-        props.billingReference.BillingReference_invoice_number
-      )
+      BillingReferenceTag(props.cancelation.canceled_invoice_number)
     );
   } else {
     populated_template = populated_template.replace(
@@ -267,7 +271,7 @@ export default function populate(props: ZATCASimplifiedInvoiceProps): string {
   );
   populated_template = populated_template.replace(
     "SET_CUSTOMER_NAT_OR_CRN",
-    props.invoiceTypes === ZATCAInvoiceTypes.INVOICE ? "NAT" : "CRN"
+    props.cancelation ? "CRN" : "NAT"
   );
 
   populated_template = populated_template.replace(

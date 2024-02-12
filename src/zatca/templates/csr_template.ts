@@ -1,4 +1,3 @@
-// 2.2.2 Profile specification of the Cryptographic Stamp identifiers. & CSR field contents / RDNs.
 const template = `
 # ------------------------------------------------------------------
 # Default section for "req" command options
