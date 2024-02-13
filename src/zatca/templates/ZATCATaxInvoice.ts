@@ -67,19 +67,13 @@ export class ZATCATaxInvoice {
     CurrencyCode: DocumentCurrencyCode
   ) => {
     let line_item_total_discounts = 0;
-    let line_item_total_taxes_befor_discount = 0;
     let line_item_total_taxes = 0;
-
     let cacAllowanceCharges: any[] = [];
-
     let cacClassifiedTaxCategories: any[] = [];
     let cacTaxTotal = {};
 
-    // VAT
-    // BR-KSA-DEC-02
     const VAT = {
       "cbc:ID": line_item.VAT_percent ? "S" : "O",
-      // BT-120, KSA-121
       "cbc:Percent": line_item.VAT_percent
         ? (line_item.VAT_percent * 100).toFixedNoRounding(2)
         : undefined,
@@ -90,7 +84,7 @@ export class ZATCATaxInvoice {
     cacClassifiedTaxCategories.push(VAT);
 
     // Calc total discounts
-    line_item.invoice_line_level_discounts?.map((discount) => {
+    line_item.discounts?.map((discount) => {
       line_item_total_discounts += discount.amount;
       cacAllowanceCharges.push({
         "cbc:ChargeIndicator": "false",
@@ -98,70 +92,49 @@ export class ZATCATaxInvoice {
         "cbc:Amount": {
           "@_currencyID": CurrencyCode,
           // BR-DEC-01
-          "#text": discount.amount.toFixedNoRounding(2),
+          "#text": (discount.amount / line_item.quantity).toFixedNoRounding(2),
+        },
+        "cbc:BaseAmount": {
+          "@_currencyID": CurrencyCode,
+          // BR-DEC-01
+          "#text": line_item.tax_exclusive_price,
         },
       });
     });
 
     // Calc item subtotal
-    let line_item_subtotal = line_item.tax_exclusive_price * line_item.quantity;
-    line_item_subtotal = parseFloat(line_item_subtotal.toFixedNoRounding(2));
-
-    // let line_item_subtotal =
-    //   line_item.tax_exclusive_price * line_item.quantity -
-    //   line_item_total_discounts;
+    // let line_item_subtotal = line_item.tax_exclusive_price * line_item.quantity;
     // line_item_subtotal = parseFloat(line_item_subtotal.toFixedNoRounding(2));
+
+    let line_item_subtotal =
+      line_item.tax_exclusive_price * line_item.quantity -
+      line_item_total_discounts;
+    line_item_subtotal = parseFloat(line_item_subtotal.toFixedNoRounding(2));
 
     // Calc total taxes
     // BR-KSA-DEC-02
-    line_item_total_taxes_befor_discount =
-      parseFloat(line_item_total_taxes.toFixedNoRounding(2)) +
-      parseFloat(
-        (line_item_subtotal * line_item.VAT_percent).toFixedNoRounding(2)
-      );
 
     line_item_total_taxes =
       parseFloat(line_item_total_taxes.toFixedNoRounding(2)) +
       parseFloat(
-        (
-          (line_item_subtotal - line_item_total_discounts) *
-          line_item.VAT_percent
-        ).toFixedNoRounding(2)
+        (line_item_subtotal * line_item.VAT_percent).toFixedNoRounding(2)
       );
 
     line_item_total_taxes = parseFloat(
       line_item_total_taxes.toFixedNoRounding(2)
     );
 
-    line_item.other_taxes?.map((tax) => {
-      line_item_total_taxes =
-        parseFloat(line_item_total_taxes.toFixedNoRounding(2)) +
-        parseFloat(
-          (tax.percent_amount * line_item_subtotal).toFixedNoRounding(2)
-        );
-      line_item_total_taxes = parseFloat(
-        line_item_total_taxes.toFixedNoRounding(2)
-      );
-      cacClassifiedTaxCategories.push({
-        "cbc:ID": "S",
-        "cbc:Percent": (tax.percent_amount * 100).toFixedNoRounding(2),
-        "cac:TaxScheme": {
-          "cbc:ID": "VAT",
-        },
-      });
-    });
-
     // BR-KSA-DEC-03, BR-KSA-51
     cacTaxTotal = {
       "cbc:TaxAmount": {
         "@_currencyID": CurrencyCode,
-        "#text": line_item_total_taxes_befor_discount.toFixedNoRounding(2),
+        "#text": line_item_total_taxes.toFixedNoRounding(2),
       },
       "cbc:RoundingAmount": {
         "@_currencyID": CurrencyCode,
         "#text": (
           parseFloat(line_item_subtotal.toFixedNoRounding(2)) +
-          parseFloat(line_item_total_taxes_befor_discount.toFixedNoRounding(2))
+          parseFloat(line_item_total_taxes.toFixedNoRounding(2))
         ).toFixed(2),
       },
     };
@@ -209,7 +182,9 @@ export class ZATCATaxInvoice {
         "cac:Price": {
           "cbc:PriceAmount": {
             "@_currencyID": CurrencyCode,
-            "#text": line_item.tax_exclusive_price,
+            "#text":
+              line_item.tax_exclusive_price -
+              line_item_total_discounts / line_item.quantity,
           },
           "cac:AllowanceCharge": cacAllowanceCharges,
         },
@@ -238,24 +213,16 @@ export class ZATCATaxInvoice {
       //BR-DEC-12 total invoice LineItem with  discount befor VAT
       "cbc:TaxExclusiveAmount": {
         "@_currencyID": CurrencyCode,
-        "#text": (
-          tax_exclusive_subtotal - line_item_total_discounts
-        ).toFixedNoRounding(2),
+        "#text": tax_exclusive_subtotal.toFixedNoRounding(2),
       },
       // BR-DEC-14, BT-112 final price the customer needs to pay(base price and the applicable VAT),
       "cbc:TaxInclusiveAmount": {
         "@_currencyID": CurrencyCode,
-        "#text": parseFloat(
-          (
-            tax_exclusive_subtotal +
-            taxes_total -
-            line_item_total_discounts
-          ).toFixed(2)
-        ),
+        "#text": parseFloat((tax_exclusive_subtotal + taxes_total).toFixed(2)),
       },
       "cbc:AllowanceTotalAmount": {
         "@_currencyID": CurrencyCode,
-        "#text": line_item_total_discounts.toFixedNoRounding(2),
+        "#text": 0,
       },
       "cbc:PrepaidAmount": {
         "@_currencyID": CurrencyCode,
@@ -265,13 +232,7 @@ export class ZATCATaxInvoice {
       // BR-DEC-18, BT-112
       "cbc:PayableAmount": {
         "@_currencyID": CurrencyCode,
-        "#text": parseFloat(
-          (
-            tax_exclusive_subtotal +
-            taxes_total -
-            line_item_total_discounts
-          ).toFixed(2)
-        ),
+        "#text": parseFloat((tax_exclusive_subtotal + taxes_total).toFixed(2)),
       },
     };
   };
@@ -320,11 +281,10 @@ export class ZATCATaxInvoice {
 
     let taxes_total = 0;
     line_items.map((line_item) => {
-      const total_line_item_discount =
-        line_item.invoice_line_level_discounts?.reduce(
-          (p, c) => p + c.amount,
-          0
-        );
+      const total_line_item_discount = line_item.discounts?.reduce(
+        (p, c) => p + c.amount,
+        0
+      );
       const taxable_amount =
         line_item.tax_exclusive_price * line_item.quantity -
         (total_line_item_discount ?? 0);
@@ -332,31 +292,6 @@ export class ZATCATaxInvoice {
       let tax_amount = line_item.VAT_percent * taxable_amount;
       addTaxSubtotal(taxable_amount, tax_amount, line_item.VAT_percent);
       taxes_total += parseFloat(tax_amount.toFixedNoRounding(2));
-      line_item.other_taxes?.map((tax) => {
-        tax_amount = tax.percent_amount * taxable_amount;
-        addTaxSubtotal(taxable_amount, tax_amount, tax.percent_amount);
-        taxes_total += parseFloat(tax_amount.toFixedNoRounding(2));
-      });
-    });
-
-    line_items.map((line_item) => {
-      const total_line_item_discount =
-        line_item.invoice_level_discounts?.reduce(
-          (p, c) => p + c.amount,
-          0
-        );
-      const taxable_amount =
-        line_item.tax_exclusive_price * line_item.quantity -
-        (total_line_item_discount ?? 0);
-
-      let tax_amount = line_item.VAT_percent * taxable_amount;
-      addTaxSubtotal(taxable_amount, tax_amount, line_item.VAT_percent);
-      taxes_total += parseFloat(tax_amount.toFixedNoRounding(2));
-      line_item.other_taxes?.map((tax) => {
-        tax_amount = tax.percent_amount * taxable_amount;
-        addTaxSubtotal(taxable_amount, tax_amount, tax.percent_amount);
-        taxes_total += parseFloat(tax_amount.toFixedNoRounding(2));
-      });
     });
 
     taxes_total = parseFloat(taxes_total.toFixed(2));
@@ -431,10 +366,8 @@ export class ZATCATaxInvoice {
         line_item,
         props.documentCurrencyCode
       );
-      line_item.invoice_line_level_discounts?.map((total_discount) => {
-        line_item_total_discounts += total_discount.amount;
-      });
-      line_item.invoice_level_discounts?.map((total_discount) => {
+
+      line_item.discounts?.map((total_discount) => {
         line_item_total_discounts += total_discount.amount;
       });
 
@@ -468,19 +401,19 @@ export class ZATCATaxInvoice {
       });
     }
 
-    line_items.map((line_item) => {
-      line_item.invoice_level_discounts?.map((discounts) => {
-        this.invoice_xml.set(
-          "Invoice/cac:AllowanceCharge",
-          false,
-          this.constructAllowanceCharge(
-            discounts,
-            props.documentCurrencyCode,
-            line_item.VAT_percent
-          )
-        );
-      });
-    });
+    // line_items.map((line_item) => {
+    //   line_item.invoice_level_discounts?.map((discounts) => {
+    //     this.invoice_xml.set(
+    //       "Invoice/cac:AllowanceCharge",
+    //       false,
+    //       this.constructAllowanceCharge(
+    //         discounts,
+    //         props.documentCurrencyCode,
+    //         line_item.VAT_percent
+    //       )
+    //     );
+    //   });
+    // });
 
     this.invoice_xml.set(
       "Invoice/cac:TaxTotal",

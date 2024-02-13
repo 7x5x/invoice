@@ -3,13 +3,12 @@ import { EGS, EGSUnitInfo } from "./zatca/egs/index.js";
 import {
   CustomerLocation,
   DocumentCurrencyCode,
-  ZATCAInvoiceTypes,
   ZATCAPaymentMethods,
   ZATCAInvoiceLineItem,
   ZatcaCustomerInfo,
 } from "./zatca/templates/tax_invoice_template.js";
-
 import fs from "fs";
+
 
 const line_item: ZATCAInvoiceLineItem = {
   id: "1",
@@ -17,26 +16,12 @@ const line_item: ZATCAInvoiceLineItem = {
   quantity: 1,
   tax_exclusive_price: 500,
   VAT_percent: 0.15,
-  // other_taxes: [{ percent_amount: 0.15 }],
   Penalty: [],
-  invoice_level_discounts: [
+  discounts: [
     {
       reason: "aaaa",
-      amount: 10.0,
+      amount: 50.0,
     },
-  ],
-};
-const line_item2: ZATCAInvoiceLineItem = {
-  id: "2",
-  name: "TEST NAME",
-  quantity: 2,
-  tax_exclusive_price: 100,
-  VAT_percent: 0.15,
-
-  // other_taxes: [{ percent_amount: 0.15 }],
-  invoice_line_level_discounts: [
-    { amount: 20.0, reason: "A discount" },
-    // { amount: 10.0, reason: "A discount" },
   ],
 };
 
@@ -108,12 +93,9 @@ const main = async () => {
       "123345"
     );
 
-    //error
-    // Sign invoice
     const { signed_invoice_string, invoice_hash, qr } =
       egs.signInvoice(invoice);
-
-    // Check invoice compliance
+    
     fs.writeFile("Invoice.xml", signed_invoice_string, (err) => {
       if (err) {
         console.error(err);
@@ -125,8 +107,6 @@ const main = async () => {
     console.log(
       await egs.checkInvoiceCompliance(signed_invoice_string, invoice_hash)
     );
-
-    // Issue production certificate
     const production_request_id = await egs.issueProductionCertificate(
       compliance_request_id
     );
