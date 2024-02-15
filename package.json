@@ -5,23 +5,32 @@
   "type": "module",
   "main": "index.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "rimraf dist && npx tsc",
+    "prestart": "npm run build",
+    "start": "node dist/temp.js ",
+    "preserve": "npm run build",
+    "serve": "concurrently \"npx tsc -w\" \"nodemon dist/temp.js\""
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/lodash": "^4.14.184",
-    "@types/node": "^18.7.16",
+    "@types/node": "^18.19.16",
     "@types/uuid": "^8.3.4",
     "@types/xmldom": "^0.1.31",
+    "nodemon": "^3.0.3",
     "typescript": "^4.8.3"
   },
   "dependencies": {
     "@fidm/x509": "^1.2.1",
+    "@types/express": "^4.17.21",
     "axios": "^1.6.7",
+    "concurrently": "^8.2.2",
+    "express": "^4.18.2",
     "fast-xml-parser": "^4.0.9",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
+    "rimraf": "^5.0.5",
     "uuid": "^9.0.0",
     "xmlbuilder": "^15.1.1",
     "xmldom": "^0.6.0",

@@ -1,7 +1,6 @@
-
 import axios from "axios";
 import { cleanUpCertificateString } from "../signing/index.js";
-
+import fs from "fs";
 const settings = {
   API_VERSION: "V2",
   SANDBOX_BASEURL:
@@ -130,7 +129,6 @@ class API {
         "Accept-Language": "en",
       };
 
-
       const response = await axios.post(
         `${settings.SANDBOX_BASEURL}/compliance/invoices`,
         {
@@ -174,14 +172,14 @@ class API {
       if (response.status != 200)
         throw new Error("Error issuing a production certificate.");
 
-      let issued_certificate =  Buffer.from(
+      let issued_certificate = Buffer.from(
         response.data.binarySecurityToken,
         "base64"
       ).toString();
       issued_certificate = `-----BEGIN CERTIFICATE-----\n${issued_certificate}\n-----END CERTIFICATE-----`;
       const api_secret = response.data.secret;
 
-      console.log(response.data)
+      console.log(response.data);
       return {
         issued_certificate,
         api_secret,
@@ -210,6 +208,7 @@ class API {
       //   },
       //   { headers: { ...auth_headers, ...headers } }
       // );
+
       const response = await axios.post(
         `${settings.SANDBOX_BASEURL}/invoices/clearance/single`,
         {
@@ -220,10 +219,10 @@ class API {
         { headers: { ...auth_headers, ...headers } }
       );
 
-      console.log(" reportInvoice response.data");
-      console.log(response);
-      if (response.status != 200)
+      if (response.status != 200) {
+        console.log(response);
         throw new Error("Error in reporting invoice.");
+      }
       return response.data;
     };
 

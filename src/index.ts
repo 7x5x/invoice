@@ -8,21 +8,17 @@ import {
   ZatcaCustomerInfo,
 } from "./zatca/templates/tax_invoice_template.js";
 import fs from "fs";
-
+import { Console, log } from "console";
+import { LogError } from "concurrently";
 
 const line_item: ZATCAInvoiceLineItem = {
   id: "1",
   name: "TEST NAME",
+  note: "note",
   quantity: 1,
-  tax_exclusive_price: 500,
+  tax_exclusive_price: 1000,
   VAT_percent: 0.15,
   Penalty: [],
-  discounts: [
-    {
-      reason: "aaaa",
-      amount: 50.0,
-    },
-  ],
 };
 
 // Sample EGSUnit
@@ -68,10 +64,11 @@ const invoice = new ZATCATaxInvoice({
     invoice_counter_number: 1,
     invoice_serial_number: "EGS1-886431145-1",
     PrepaidAmount: 0,
-    documentCurrencyCode: DocumentCurrencyCode.USD,
-    payment_method: ZATCAPaymentMethods.BANK_ACCOUNT,
-    issue_date: "2022-03-13",
-    delivery_date: "2022-09-13",
+    conversion_rate: 3.75,
+    documentCurrencyCode: DocumentCurrencyCode.SAR,
+    payment_method: ZATCAPaymentMethods.CASH,
+    issue_date: "2024-02-13",
+    delivery_date: "2024-03-13",
     issue_time: "14:40:40",
     // cancelation: {
     //   canceled_invoice_number: 1,
@@ -84,7 +81,9 @@ const invoice = new ZATCATaxInvoice({
   },
 });
 
-const main = async () => {
+export const main = async () => {
+  console.log(line_item.name);
+  console.log(line_item.discounts);
   try {
     const egs = new EGS(egsunit);
 
@@ -95,7 +94,7 @@ const main = async () => {
 
     const { signed_invoice_string, invoice_hash, qr } =
       egs.signInvoice(invoice);
-    
+
     fs.writeFile("Invoice.xml", signed_invoice_string, (err) => {
       if (err) {
         console.error(err);
@@ -116,4 +115,16 @@ const main = async () => {
   }
 };
 
-main();
+// main();
+export const tem = (line_itemData: ZATCAInvoiceLineItem) => {
+  const line_item2: ZATCAInvoiceLineItem = {
+    id: line_itemData.id + 2,
+    name: line_itemData.name,
+    note: line_itemData.note,
+    quantity: line_itemData.quantity,
+    tax_exclusive_price: line_itemData.tax_exclusive_price,
+    VAT_percent: line_itemData.VAT_percent,
+  };
+  console.log("from tem");
+  return line_item2;
+};

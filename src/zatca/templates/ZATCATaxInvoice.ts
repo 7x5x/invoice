@@ -59,9 +59,10 @@ export class ZATCATaxInvoice {
 
       // Parsing
       this.parseLineItems(props.line_items ?? [], props);
+      
     }
   }
-
+  
   private constructLineItemTotals = (
     line_item: ZATCAInvoiceLineItem,
     CurrencyCode: DocumentCurrencyCode
@@ -165,6 +166,7 @@ export class ZATCATaxInvoice {
     return {
       line_item_xml: {
         "cbc:ID": line_item.id,
+        "cbc:Note": line_item.note,
         "cbc:InvoicedQuantity": {
           "@_unitCode": "PCE",
           "#text": line_item.quantity,
@@ -239,7 +241,8 @@ export class ZATCATaxInvoice {
 
   private constructTaxTotal = (
     line_items: ZATCAInvoiceLineItem[],
-    CurrencyCode: DocumentCurrencyCode
+    CurrencyCode: DocumentCurrencyCode,
+    conversion_rate: number
   ) => {
     const cacTaxSubtotal: any[] = [];
     const addTaxSubtotal = (
@@ -308,7 +311,10 @@ export class ZATCATaxInvoice {
         // TaxAmount must be SAR even if the invoice is USD
         "cbc:TaxAmount": {
           "@_currencyID": "SAR",
-          "#text": taxes_total.toFixedNoRounding(2),
+          "#text":
+            CurrencyCode != DocumentCurrencyCode.SAR
+              ? taxes_total * conversion_rate ?? (1).toFixedNoRounding(2)
+              : taxes_total.toFixedNoRounding(2),
         },
       },
     ];
@@ -418,7 +424,11 @@ export class ZATCATaxInvoice {
     this.invoice_xml.set(
       "Invoice/cac:TaxTotal",
       false,
-      this.constructTaxTotal(line_items, props.documentCurrencyCode)
+      this.constructTaxTotal(
+        line_items,
+        props.documentCurrencyCode,
+        props.conversion_rate
+      )
     );
 
     this.invoice_xml.set(

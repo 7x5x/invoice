@@ -124,6 +124,7 @@ export interface ZATCAInvoiceLineItemTax {
 export interface ZATCAInvoiceLineItem {
   id: string;
   name: string;
+  note?: string;
   quantity: number;
   Penalty?: ZATCAInvoiceLineItemDiscount[];
   tax_exclusive_price: number;
@@ -160,7 +161,7 @@ export enum DocumentCurrencyCode {
 export interface ZATCASimplifiedInvoiceProps {
   egs_info: EGSUnitInfo;
   documentCurrencyCode: DocumentCurrencyCode;
-
+  conversion_rate?: number;
   payment_method: ZATCAPaymentMethods;
   customerInfo: ZatcaCustomerInfo;
   invoice_counter_number: number;
